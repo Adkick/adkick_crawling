@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+
+httpx
+requests
+
+beautifulsoup4
+lxml
+
+selenium
+webdriver-manager
+
+# TEST
+playwright
