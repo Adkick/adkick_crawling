@@ -10,5 +10,8 @@ lxml
 selenium
 webdriver-manager
 
+sqlalchemy
+redis
+
 # TEST
 playwright
