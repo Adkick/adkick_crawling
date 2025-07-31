@@ -1,17 +1,25 @@
 from datetime import datetime
+from enum import Enum
+from sqlalchemy.dialects.mysql import ENUM as SQLEnum
 from typing import Optional, List
 from sqlalchemy import BIGINT, String, Float, Integer, JSON, DateTime, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
-
+class Status(str, Enum):
+    FAILED = "FAILED"
+    COMPLETED = "COMPLETED"
+    PROGRESS = "PROGRESS"
+    
 class Store(Base):
     __tablename__ = "store"
     
     store_id: Mapped[int] = mapped_column(BIGINT, primary_key=True, comment="기본키")
+    place_id: Mapped[str] = mapped_column(String(100), nullable=True, comment="매장의 플레이스 ID")
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="매장명")
     address: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, comment="주소")
     category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, comment="카테고리")
     store_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True, comment="매장 이미지")
+    
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False, 
@@ -36,7 +44,7 @@ class Report(Base):
     report_id: Mapped[int] = mapped_column(BIGINT, primary_key=True, comment="기본키")
     request_member_id: Mapped[int] = mapped_column(BIGINT, nullable=False, comment="요청 회원 ID")
     store_id: Mapped[int] = mapped_column(
-        BIGINT, 
+        BIGINT,
         ForeignKey("store.store_id"), 
         nullable=False, 
         comment="매장 ID"
@@ -49,6 +57,12 @@ class Report(Base):
         nullable=False, 
         server_default="0", 
         comment="총 리뷰 수"
+    )
+    status: Mapped[Status] = mapped_column(
+        SQLEnum(Status), 
+        nullable=False, 
+        default=Status.PROGRESS, 
+        comment="상태"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
