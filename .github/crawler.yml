@@ -1,0 +1,47 @@
+name: Crawler CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' }} && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy and Build Backend to server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: ${{ secrets.EC2_SSH_PORT }}
+        script: |
+          echo "🚀 Starting deployment with server-side build..."
+          cd /home/adkick
+          
+          git pull origin main
+          
+          # .env 파일 생성/업데이트 (덮어쓰기)
+          echo "📝 Creating environment file..."
+          echo '${{ secrets.CRAWLER_ENV }}' > ./app/.env
+          chmod 600 ./app/.env
+          
+          # Docker 이미지 빌드 (캐시 활용)
+          echo "🔨 Building Docker image..."
+          docker build -t adkick-crawler .
+          
+          # 빌드 성공 확인
+          if [ $? -eq 0 ]; then
+            echo "✅ Docker image built successfully"
+          else
+            echo "❌ Docker build failed"
+            exit 1
+          fi
+          
+          docker run -d -p 8001:80 --env-file app/.env adkick-crawler
+          docker system prune -f
+          echo "✅ Deployment completed successfully!"
