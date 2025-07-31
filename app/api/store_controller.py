@@ -92,4 +92,9 @@ async def get_store_analytics(
     
     return ApiResponse(data={"reportId":report_id})
 
-# @router.get("/reports/")
+@router.get("reports/{report_id}")
+async def get_report(
+    report_id: int
+):
+    review_service = ReviewApplicationService()
+    return await review_service.get_report(report_id)
