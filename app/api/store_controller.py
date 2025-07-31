@@ -1,10 +1,11 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Query, Request
 from app.application.review_application_service import ReviewApplicationService
 from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET
 
 import httpx
 
 from app.schemas.api_response import ApiResponse
+from app.services.jwt_token_service import JwtTokenService
 
 router = APIRouter()
 
@@ -56,7 +57,8 @@ async def get_stores(
     
 @router.get("/stores/analytics")
 async def get_store_analytics(
-    name: str = Query(..., description="검색할 키워드 (예: '정자동 카페')"),
+    access_token: str|None = Cookie(None),
+    name: str = Query(..., description="상호명"),
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """
@@ -70,11 +72,24 @@ async def get_store_analytics(
     
     return : 로직 실행 후 단순 로직 이후 응답은 웹소켓으로. 웹소켓이 존재하는 본 서버에 이벤트를 보내 응답하도록 함.
     """
-    service = ReviewApplicationService()
+    review_service = ReviewApplicationService()
+    token_service = JwtTokenService()
+    member_id = 0
+    try:
+        payload = await token_service.decode_token(access_token)
+        member_id = payload.get("member_id")
+    except:
+        pass
+    
+    report_id = await review_service.create_report(member_id, name)
     
     background_tasks.add_task(
-        service.execute_review,
+        review_service.execute_review,
+        member_id,
+        report_id,
         name
     )
     
-    return ApiResponse()
+    return ApiResponse(data={"reportId":report_id})
+
+# @router.get("/reports/")

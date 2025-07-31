@@ -4,7 +4,6 @@ import logging
 from typing import Dict, Optional, override, List
 from fastapi import WebSocket
 
-from app.schemas.message_types import EventType
 from app.redis_client import AsyncRedisClient, get_async_redis_client
 
 logger = logging.getLogger()
@@ -30,7 +29,7 @@ class RedisPubSubGateway:
         return self.redis_client
 
     @override
-    async def publish_to_channel(self, event_type: EventType, channel: str, message: dict) -> None:
+    async def publish_to_channel(self, channel: str, message: dict) -> None:
         """특정 채널에 메시지 발행"""
         redis_client = await self._get_redis_client()
         # ApiResponse 구조로 블래핑
@@ -44,7 +43,7 @@ class RedisPubSubGateway:
         logger.info(f"Published message to channel {channel}")
 
     @override
-    async def publish_to_multiple_channels(self, event_type: EventType, channels: List[str], message: dict) -> None:
+    async def publish_to_multiple_channels(self, channels: List[str], message: dict) -> None:
         """여러 채널에 메시지 발행"""
         redis_client = await self._get_redis_client()
         
